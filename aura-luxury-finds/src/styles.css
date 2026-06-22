@@ -1,0 +1,133 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ivory: var(--ivory);
+  --color-cream: var(--cream);
+  --color-sand: var(--sand);
+  --color-gold: var(--gold);
+  --color-charcoal: var(--charcoal);
+  --color-earth: var(--earth);
+
+  --font-display: "Cormorant Garamond", "Playfair Display", serif;
+  --font-sans: "Inter", "Manrope", system-ui, sans-serif;
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Luxury palette - warm beige/cream/gold/charcoal */
+  --ivory: oklch(0.978 0.012 85);
+  --cream: oklch(0.948 0.022 80);
+  --sand: oklch(0.86 0.035 75);
+  --gold: oklch(0.66 0.085 70);
+  --charcoal: oklch(0.22 0.012 60);
+  --earth: oklch(0.42 0.04 50);
+
+  --background: var(--ivory);
+  --foreground: var(--charcoal);
+  --card: oklch(0.99 0.008 85);
+  --card-foreground: var(--charcoal);
+  --popover: var(--ivory);
+  --popover-foreground: var(--charcoal);
+  --primary: var(--charcoal);
+  --primary-foreground: var(--ivory);
+  --secondary: var(--cream);
+  --secondary-foreground: var(--charcoal);
+  --muted: var(--cream);
+  --muted-foreground: oklch(0.48 0.025 60);
+  --accent: var(--gold);
+  --accent-foreground: var(--ivory);
+  --destructive: oklch(0.55 0.18 25);
+  --destructive-foreground: var(--ivory);
+  --border: oklch(0.88 0.022 75);
+  --input: oklch(0.9 0.018 75);
+  --ring: var(--gold);
+
+  --shadow-soft: 0 1px 2px oklch(0.22 0.012 60 / 0.04), 0 8px 30px oklch(0.22 0.012 60 / 0.06);
+  --shadow-elegant: 0 30px 80px -20px oklch(0.22 0.012 60 / 0.18);
+  --gradient-warm: linear-gradient(180deg, oklch(0.978 0.012 85), oklch(0.948 0.022 80));
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--earth);
+    font-weight: 500;
+  }
+}
+
+/* Lenis */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+
+/* Marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+/* Glass nav */
+.glass {
+  background: color-mix(in oklab, var(--ivory) 70%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--charcoal) 8%, transparent);
+}

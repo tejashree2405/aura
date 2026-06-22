@@ -1,0 +1,162 @@
+[
+  {
+    "slug": "restorative-serum",
+    "name": "Restorative Serum",
+    "brand": "Maison Aura",
+    "category": "skincare",
+    "price": 3400,
+    "rating": 4.8,
+    "description": "A weightless restorative serum for skin that needs quiet repair.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "cocoon-day-cream",
+    "name": "Cocoon Day Cream",
+    "brand": "Maison Aura",
+    "category": "skincare",
+    "price": 2800,
+    "rating": 4.8,
+    "description": "A featherweight day cream that softens, hydrates, and disappears into the skin.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "gentle-cleansing-balm",
+    "name": "Gentle Cleansing Balm",
+    "brand": "Atelier Blanc",
+    "category": "skincare",
+    "price": 2200,
+    "rating": 4.8,
+    "description": "A balm cleanser that melts the day away without disturbing the skin's calm.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "midnight-renewal-oil",
+    "name": "Midnight Renewal Oil",
+    "brand": "House of Ila",
+    "category": "skincare",
+    "price": 3800,
+    "rating": 4.8,
+    "description": "An overnight facial oil with botanical actives, made for slow renewal.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "botanical-hair-oil",
+    "name": "Botanical Hair Oil",
+    "brand": "Studio Noir",
+    "category": "haircare",
+    "price": 2200,
+    "rating": 4.8,
+    "description": "A featherweight pre-wash oil that restores shine without weight.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "repair-mask",
+    "name": "Restorative Hair Mask",
+    "brand": "Studio Noir",
+    "category": "haircare",
+    "price": 2600,
+    "rating": 4.8,
+    "description": "A weekly deep mask for coloured and chemically-treated hair.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "everyday-shampoo",
+    "name": "Everyday Shampoo",
+    "brand": "Salon Veda",
+    "category": "haircare",
+    "price": 1600,
+    "rating": 4.8,
+    "description": "A daily gentle cleanse for all hair textures.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "scalp-serum",
+    "name": "Scalp Renewal Serum",
+    "brand": "Salon Veda",
+    "category": "haircare",
+    "price": 2400,
+    "rating": 4.8,
+    "description": "A soothing scalp serum that supports density and calm.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "velvet-lip",
+    "name": "Velvet Lip",
+    "brand": "Atelier Blanc",
+    "category": "makeup",
+    "price": 1800,
+    "rating": 4.8,
+    "description": "A satin lip in the most considered shade of muted rose.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "editorial-mascara",
+    "name": "Editorial Mascara",
+    "brand": "Atelier Blanc",
+    "category": "makeup",
+    "price": 2200,
+    "rating": 4.8,
+    "description": "Lengthening, never theatrical. The mascara editorial artists reach for.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "complexion-base",
+    "name": "Complexion Base",
+    "brand": "House of Ila",
+    "category": "makeup",
+    "price": 3200,
+    "rating": 4.8,
+    "description": "A second-skin base in twelve calibrated tones.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "brow-pomade",
+    "name": "Brow Architect Pomade",
+    "brand": "House of Ila",
+    "category": "makeup",
+    "price": 1400,
+    "rating": 4.8,
+    "description": "A precise brow pomade with a sculpting brush.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "stillness-diffuser",
+    "name": "Stillness Diffuser",
+    "brand": "The Quiet Room",
+    "category": "wellness",
+    "price": 4600,
+    "rating": 4.8,
+    "description": "A ceramic diffuser with a hand-blended Ayurvedic oil.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "calm-bath-salts",
+    "name": "Calm Bath Salts",
+    "brand": "The Quiet Room",
+    "category": "wellness",
+    "price": 1900,
+    "rating": 4.8,
+    "description": "Pink salt, lavender, and rose for the slowest bath of the week.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "morning-tisane",
+    "name": "Morning Tisane",
+    "brand": "The Quiet Room",
+    "category": "wellness",
+    "price": 1200,
+    "rating": 4.8,
+    "description": "A grounding morning ritual in a single glass cup.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  },
+  {
+    "slug": "silk-pillow",
+    "name": "Mulberry Silk Pillowcase",
+    "brand": "The Quiet Room",
+    "category": "wellness",
+    "price": 3400,
+    "rating": 4.8,
+    "description": "22-momme mulberry silk, for skin and hair that wake undisturbed.",
+    "ingredients": ["Squalane", "Niacinamide", "Botanical actives", "Vitamin E"]
+  }
+]

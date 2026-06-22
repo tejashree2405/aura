@@ -1,0 +1,87 @@
+# ======================
+# Environment Variables
+# ======================
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+
+# ======================
+# Dependencies
+# ======================
+node_modules/
+**/node_modules/
+
+# ======================
+# Build Outputs
+# ======================
+dist/
+build/
+coverage/
+.out/
+.output/
+.next/
+.vite/
+.nitro/
+.vinxi/
+.tanstack/
+
+# ======================
+# Cloudflare / Wrangler
+# ======================
+.wrangler/
+.dev.vars
+
+# ======================
+# Logs
+# ======================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ======================
+# IDE
+# ======================
+.vscode/
+!.vscode/extensions.json
+.idea/
+
+# ======================
+# OS
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# Prisma
+# ======================
+prisma/dev.db
+prisma/dev.db-journal
+backend/node_modules/.prisma/
+
+# ======================
+# Aura Specific
+# ======================
+.agents/
+.lovable/
+supabase/
+
+# ======================
+# Local Files
+# ======================
+*.local
+
+# ======================
+# Deployment
+# ======================
+.vercel/
+.railway/
+.netlify/
+.fly/
