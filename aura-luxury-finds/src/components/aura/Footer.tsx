@@ -1,6 +1,45 @@
 import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth-context";
 
 export function Footer() {
+  const { user } = useAuth();
+  const role = user?.role;
+
+  const exploreLinks = role === "SALON"
+    ? [
+        { to: "/marketplace", label: "Marketplace" },
+        { to: "/journal", label: "Journal" },
+      ]
+    : role === "ADMIN"
+      ? []
+      : [
+          { to: "/salons", label: "Salons" },
+          { to: "/marketplace", label: "Marketplace" },
+          { to: "/journal", label: "Journal" },
+        ];
+
+  const accountLinks = role === "SALON"
+    ? [
+        { to: "/salon/profile", label: "Profile" },
+        { to: "/orders", label: "Orders" },
+      ]
+    : role === "ADMIN"
+      ? [
+          { to: "/admin/dashboard", label: "Dashboard" },
+        ]
+      : [
+          { to: "/profile", label: "Profile" },
+          { to: "/bag", label: "My Bag" },
+          { to: "/orders", label: "Orders" },
+          { to: "/appointments", label: "Appointments" },
+        ];
+
+  const aiLinks = role === "ADMIN"
+    ? []
+    : [
+        { to: "/ask-aura", label: "Ask Aûra" },
+      ];
+
   return (
     <footer className="bg-foreground text-background pt-20 md:pt-24 pb-10 px-6 md:px-16">
       <div className="max-w-[1280px] mx-auto">
@@ -13,30 +52,36 @@ export function Footer() {
               Luxury beauty concierge for Bangalore.
             </p>
           </div>
-          <div>
-            <p className="eyebrow" style={{ color: "var(--sand)" }}>Explore</p>
-            <ul className="mt-5 space-y-3 text-sm text-background/70">
-              <li><Link to="/salons" className="hover:text-background">Salons</Link></li>
-              <li><Link to="/marketplace" className="hover:text-background">Marketplace</Link></li>
-              <li><Link to="/journal" className="hover:text-background">Journal</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow" style={{ color: "var(--sand)" }}>Account</p>
-            <ul className="mt-5 space-y-3 text-sm text-background/70">
-              <li><Link to="/profile" className="hover:text-background">Profile</Link></li>
-              <li><Link to="/bag" className="hover:text-background">My Bag</Link></li>
-              <li><Link to="/orders" className="hover:text-background">Orders</Link></li>
-              <li><Link to="/appointments" className="hover:text-background">Appointments</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow" style={{ color: "var(--sand)" }}>AI</p>
-            <ul className="mt-5 space-y-3 text-sm text-background/70">
-              <li><Link to="/ask-aura" className="hover:text-background">Ask Aûra</Link></li>
-              <li><Link to="/recommendations" className="hover:text-background">Recommendations</Link></li>
-            </ul>
-          </div>
+          {exploreLinks.length > 0 && (
+            <div>
+              <p className="eyebrow" style={{ color: "var(--sand)" }}>Explore</p>
+              <ul className="mt-5 space-y-3 text-sm text-background/70">
+                {exploreLinks.map((l) => (
+                  <li key={l.to}><Link to={l.to} className="hover:text-background">{l.label}</Link></li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {accountLinks.length > 0 && (
+            <div>
+              <p className="eyebrow" style={{ color: "var(--sand)" }}>Account</p>
+              <ul className="mt-5 space-y-3 text-sm text-background/70">
+                {accountLinks.map((l) => (
+                  <li key={l.to}><Link to={l.to} className="hover:text-background">{l.label}</Link></li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {aiLinks.length > 0 && (
+            <div>
+              <p className="eyebrow" style={{ color: "var(--sand)" }}>AI</p>
+              <ul className="mt-5 space-y-3 text-sm text-background/70">
+                {aiLinks.map((l) => (
+                  <li key={l.to}><Link to={l.to} className="hover:text-background">{l.label}</Link></li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4 pt-8 text-xs text-background/50">
           <span>Bangalore, India · hello@aura.beauty</span>

@@ -3,7 +3,8 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { PageShell } from "@/components/aura/PageShell";
 import { RequireAuth } from "@/components/aura/RequireAuth";
 import { useAccount } from "@/lib/account-store";
-import { getProduct, PRODUCTS } from "@/data/products";
+import { PRODUCTS } from "@/data/products";
+import { resolveProduct } from "@/lib/account-store";
 import { ProductCard } from "@/components/aura/ProductCard";
 
 export const Route = createFileRoute("/bag")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/bag")({
 function BagPage() {
   const { bag, updateBagQty, removeFromBag, bagSubtotal } = useAccount();
   const items = bag.flatMap((b) => {
-    const p = getProduct(b.productSlug);
+    const p = resolveProduct(b.productSlug);
     return p ? [{ b, p }] : [];
   });
 

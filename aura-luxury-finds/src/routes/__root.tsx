@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../lib/auth-context";
 import { AccountProvider } from "../lib/account-store";
 import { Toaster } from "@/components/ui/sonner";
+import { useAdminRouteGuard } from "@/components/aura/AdminGuard";
 
 function NotFoundComponent() {
   return (
@@ -84,12 +85,18 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AdminRouteGuardInner() {
+  useAdminRouteGuard();
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AccountProvider>
+          <AdminRouteGuardInner />
           <Outlet />
           <Toaster position="top-center" />
         </AccountProvider>

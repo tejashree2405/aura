@@ -3,18 +3,21 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-// Load environment variables
 dotenv.config();
 
 import authRoutes from "./routes/auth";
 import aiRoutes from "./routes/ai";
 import ordersRoutes from "./routes/orders";
+import salonRoutes from "./routes/salon";
+import adminRoutes from "./routes/admin";
+import uploadRoutes from "./routes/upload";
+
 const app = express();
 const PORT = process.env.PORT || 3004;
 
 app.use(cors({
-  origin: "http://localhost:8080",
-  credentials: true
+  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+  credentials: true,
 }));
 
 app.use(express.json({ limit: "10mb" }));
@@ -24,21 +27,15 @@ app.use(cookieParser());
 app.use("/auth", authRoutes);
 app.use("/ai", aiRoutes);
 app.use("/", ordersRoutes);
+app.use("/salon", salonRoutes);
+app.use("/admin", adminRoutes);
+app.use("/upload", uploadRoutes);
 
-app.use(express.json({ limit: "10mb" }));
-
-// Route handlers
-app.use("/auth", authRoutes);
-app.use("/ai", aiRoutes);
-app.use("/", ordersRoutes); // Handles /orders and /appointments
-
-// Root health check
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "Aûra API is online and serene" });
 });
 
-// Global error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Something went wrong in our serene sanctuary." });
 });

@@ -35,6 +35,7 @@ router.get("/orders", authenticate, async (req: AuthRequest, res: Response) => {
     const userId = req.userId!;
     const orders = await prisma.order.findMany({
       where: { userId },
+      include: { items: true },
       orderBy: { createdAt: "desc" },
     });
     return res.json(orders);
@@ -83,6 +84,79 @@ router.post(
   },
 );
 
+// ==========================================
+// Addresses Endpoints
+// ==========================================
+
+router.get("/addresses", authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const addresses = await prisma.address.findMany({
+      where: { userId: req.userId! },
+      orderBy: { createdAt: "desc" },
+    });
+    return res.json(addresses);
+  } catch (error) {
+    return prismaErrorResponse(error, res, "Fetch addresses error");
+  }
+});
+
+router.post("/addresses", authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { label, fullName, phone, line1, line2, landmark, city, state, pincode } = req.body;
+    if (!line1 || !city || !state || !pincode) {
+      return res.status(400).json({ error: "Missing required address fields" });
+    }
+    if (!/^\d{6}$/.test(pincode)) {
+      return res.status(400).json({ error: "Pincode must be exactly 6 digits" });
+    }
+    const address = await prisma.address.create({
+      data: {
+        userId: req.userId!,
+        label: label || "Home",
+        fullName: fullName || "",
+        phone: phone || "",
+        line1,
+        line2: line2 || null,
+        landmark: landmark || null,
+        city,
+        state,
+        pincode,
+      },
+    });
+    return res.status(201).json(address);
+  } catch (error) {
+    return prismaErrorResponse(error, res, "Create address error");
+  }
+});
+
+router.put("/addresses/:id", authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const existing = await prisma.address.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+    if (!existing) return res.status(404).json({ error: "Address not found" });
+    if (req.body.pincode && !/^\d{6}$/.test(req.body.pincode)) {
+      return res.status(400).json({ error: "Pincode must be exactly 6 digits" });
+    }
+    const address = await prisma.address.update({
+      where: { id: req.params.id },
+      data: req.body,
+    });
+    return res.json(address);
+  } catch (error) {
+    return prismaErrorResponse(error, res, "Update address error");
+  }
+});
+
+router.delete("/addresses/:id", authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const existing = await prisma.address.findFirst({ where: { id: req.params.id, userId: req.userId! } });
+    if (!existing) return res.status(404).json({ error: "Address not found" });
+    await prisma.address.delete({ where: { id: req.params.id } });
+    return res.json({ success: true });
+  } catch (error) {
+    return prismaErrorResponse(error, res, "Delete address error");
+  }
+});
+
 // GET /orders/:id
 router.get(
   "/orders/:id",
@@ -94,6 +168,7 @@ router.get(
 
       const order = await prisma.order.findFirst({
         where: { id: orderId, userId },
+        include: { items: true },
       });
 
       if (!order) {
@@ -119,7 +194,7 @@ function appointmentDateTime(date: Date, time: string) {
 
 async function completePastAppointments(userId: string) {
   const active = await prisma.appointment.findMany({
-    where: { userId, status: "UPCOMING" },
+    where: { userId, status: "CONFIRMED" },
     select: { id: true, date: true, time: true },
   });
   const completedIds = active
@@ -171,6 +246,25 @@ router.post(
           .json({ error: "Missing salonId, service, date or time" });
       }
 
+      const hour = parseInt(time.split(":")[0], 10);
+      if (hour < 10 || hour >= 21) {
+        return res.status(400).json({ error: "Bookings are available between 10:00 AM and 9:00 PM" });
+      }
+
+      const dayStart = new Date(`${date}T00:00:00`);
+      const dayEnd = new Date(`${date}T23:59:59`);
+      const conflict = await prisma.appointment.findFirst({
+        where: {
+          salonId,
+          date: { gte: dayStart, lte: dayEnd },
+          time,
+          status: { in: ["PENDING", "CONFIRMED"] },
+        },
+      });
+      if (conflict) {
+        return res.status(409).json({ error: "This time slot is already booked" });
+      }
+
       const appointment = await prisma.appointment.create({
         data: {
           userId,
@@ -178,7 +272,10 @@ router.post(
           service,
           date: new Date(date),
           time,
-          status: "UPCOMING",
+          startTime: time,
+          endTime: `${(hour + 1).toString().padStart(2, "0")}:${time.split(":")[1]}`,
+          paymentMethod: "PAY_AT_SALON",
+          status: "PENDING",
         },
       });
 
@@ -197,7 +294,7 @@ router.put(
     try {
       const userId = req.userId!;
       const appointmentId = req.params.id;
-      const { date, time, status } = req.body;
+      const { date, time, status, service, notes } = req.body;
 
       const appointment = await prisma.appointment.findFirst({
         where: { id: appointmentId, userId },
@@ -207,15 +304,14 @@ router.put(
         return res.status(404).json({ error: "Appointment not found" });
       }
 
-      const updateData: {
-        date?: Date;
-        time?: string;
-        status?: "UPCOMING" | "CANCELLED";
-      } = {};
-      if (date) updateData.date = new Date(`${date}T00:00:00`);
-      if (time) updateData.time = time;
-      if (status === "UPCOMING" || status === "CANCELLED")
-        updateData.status = status;
+      const updateData: Record<string, unknown> = {};
+      if (status === "CANCELLED") updateData.status = "CANCELLED";
+      if (appointment.status === "PENDING") {
+        if (date) { updateData.date = new Date(`${date}T00:00:00`); }
+        if (time) { updateData.time = time; updateData.startTime = time; }
+        if (service) updateData.service = service;
+        if (notes !== undefined) updateData.notes = notes;
+      }
 
       const updated = await prisma.appointment.update({
         where: { id: appointmentId },

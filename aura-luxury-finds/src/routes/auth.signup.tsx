@@ -23,7 +23,7 @@ function SignupPage() {
   const goNext = () => {
     const back = takeRedirect();
     if (back) navigate({ to: back });
-    else navigate({ to: "/ask-aura" });
+    else navigate({ to: "/" });
   };
 
   const submit = async (e: React.FormEvent) => {

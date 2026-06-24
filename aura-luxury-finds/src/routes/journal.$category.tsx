@@ -1,7 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/aura/PageShell";
 import { JournalCard } from "@/components/aura/JournalCard";
 import { articlesByCategory } from "@/data/journal";
+import { api } from "@/lib/api-client";
+import type { JournalArticle } from "@/data/types";
 
 const VALID = ["bridal", "haircare", "skincare", "wellness"] as const;
 const LABELS: Record<string, string> = {
@@ -26,7 +29,23 @@ export const Route = createFileRoute("/journal/$category")({
 
 function CategoryPage() {
   const { category, label } = Route.useLoaderData();
-  const articles = articlesByCategory(category);
+  const hardcoded = articlesByCategory(category);
+  const { data: dbAll } = useQuery({
+    queryKey: ["public-journals"],
+    queryFn: () => api.listDbJournals().catch(() => []),
+    staleTime: 60_000,
+  });
+  const hardcodedSlugs = new Set(hardcoded.map((a) => a.slug));
+  const dbFiltered = ((dbAll as Record<string, unknown>[] | undefined) || [])
+    .filter((a) => (a.category as string) === category && !hardcodedSlugs.has(a.slug as string))
+    .map((a): JournalArticle => ({
+      slug: a.slug as string, title: a.title as string, excerpt: (a.excerpt as string) || "",
+      category: a.category as JournalArticle["category"], cover: a.cover as string,
+      readingTime: (a.readingTime as string) || "5 min", content: (a.content as string[]) || [],
+      author: (a.author as string) || "Aûra Editorial", date: (a.date as string) || "",
+    }));
+  const articles = [...hardcoded, ...dbFiltered];
+
   return (
     <PageShell>
       <section className="px-6 md:px-16 pb-20">

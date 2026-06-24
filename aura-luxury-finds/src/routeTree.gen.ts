@@ -22,12 +22,18 @@ import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as MarketplaceIndexRouteImport } from './routes/marketplace.index'
 import { Route as JournalIndexRouteImport } from './routes/journal.index'
 import { Route as SalonsSlugRouteImport } from './routes/salons.$slug'
+import { Route as SalonSignupRouteImport } from './routes/salon.signup'
+import { Route as SalonProfileRouteImport } from './routes/salon.profile'
+import { Route as SalonLoginRouteImport } from './routes/salon.login'
+import { Route as SalonDashboardRouteImport } from './routes/salon.dashboard'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders.$orderId'
 import { Route as MarketplaceCategoryRouteImport } from './routes/marketplace.$category'
 import { Route as JournalCategoryRouteImport } from './routes/journal.$category'
 import { Route as AuthSignupRouteImport } from './routes/auth.signup'
 import { Route as AuthLoginRouteImport } from './routes/auth.login'
 import { Route as AskAuraConversationIdRouteImport } from './routes/ask-aura.$conversationId'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as SalonsServiceServiceRouteImport } from './routes/salons.service.$service'
 import { Route as SalonsAreaAreaRouteImport } from './routes/salons.area.$area'
 import { Route as MarketplaceProductSlugRouteImport } from './routes/marketplace.product.$slug'
@@ -98,6 +104,26 @@ const SalonsSlugRoute = SalonsSlugRouteImport.update({
   path: '/salons/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SalonSignupRoute = SalonSignupRouteImport.update({
+  id: '/salon/signup',
+  path: '/salon/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalonProfileRoute = SalonProfileRouteImport.update({
+  id: '/salon/profile',
+  path: '/salon/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalonLoginRoute = SalonLoginRouteImport.update({
+  id: '/salon/login',
+  path: '/salon/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalonDashboardRoute = SalonDashboardRouteImport.update({
+  id: '/salon/dashboard',
+  path: '/salon/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   id: '/orders/$orderId',
   path: '/orders/$orderId',
@@ -127,6 +153,16 @@ const AskAuraConversationIdRoute = AskAuraConversationIdRouteImport.update({
   id: '/$conversationId',
   path: '/$conversationId',
   getParentRoute: () => AskAuraRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SalonsServiceServiceRoute = SalonsServiceServiceRouteImport.update({
   id: '/salons/service/$service',
@@ -158,12 +194,18 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/profile': typeof ProfileRoute
   '/recommendations': typeof RecommendationsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/login': typeof AdminLoginRoute
   '/ask-aura/$conversationId': typeof AskAuraConversationIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/journal/$category': typeof JournalCategoryRoute
   '/marketplace/$category': typeof MarketplaceCategoryRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/salon/dashboard': typeof SalonDashboardRoute
+  '/salon/login': typeof SalonLoginRoute
+  '/salon/profile': typeof SalonProfileRoute
+  '/salon/signup': typeof SalonSignupRoute
   '/salons/$slug': typeof SalonsSlugRoute
   '/journal/': typeof JournalIndexRoute
   '/marketplace/': typeof MarketplaceIndexRoute
@@ -183,12 +225,18 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/profile': typeof ProfileRoute
   '/recommendations': typeof RecommendationsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/login': typeof AdminLoginRoute
   '/ask-aura/$conversationId': typeof AskAuraConversationIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/journal/$category': typeof JournalCategoryRoute
   '/marketplace/$category': typeof MarketplaceCategoryRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/salon/dashboard': typeof SalonDashboardRoute
+  '/salon/login': typeof SalonLoginRoute
+  '/salon/profile': typeof SalonProfileRoute
+  '/salon/signup': typeof SalonSignupRoute
   '/salons/$slug': typeof SalonsSlugRoute
   '/journal': typeof JournalIndexRoute
   '/marketplace': typeof MarketplaceIndexRoute
@@ -209,12 +257,18 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/profile': typeof ProfileRoute
   '/recommendations': typeof RecommendationsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/login': typeof AdminLoginRoute
   '/ask-aura/$conversationId': typeof AskAuraConversationIdRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/journal/$category': typeof JournalCategoryRoute
   '/marketplace/$category': typeof MarketplaceCategoryRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
+  '/salon/dashboard': typeof SalonDashboardRoute
+  '/salon/login': typeof SalonLoginRoute
+  '/salon/profile': typeof SalonProfileRoute
+  '/salon/signup': typeof SalonSignupRoute
   '/salons/$slug': typeof SalonsSlugRoute
   '/journal/': typeof JournalIndexRoute
   '/marketplace/': typeof MarketplaceIndexRoute
@@ -236,12 +290,18 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/profile'
     | '/recommendations'
+    | '/admin/dashboard'
+    | '/admin/login'
     | '/ask-aura/$conversationId'
     | '/auth/login'
     | '/auth/signup'
     | '/journal/$category'
     | '/marketplace/$category'
     | '/orders/$orderId'
+    | '/salon/dashboard'
+    | '/salon/login'
+    | '/salon/profile'
+    | '/salon/signup'
     | '/salons/$slug'
     | '/journal/'
     | '/marketplace/'
@@ -261,12 +321,18 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/profile'
     | '/recommendations'
+    | '/admin/dashboard'
+    | '/admin/login'
     | '/ask-aura/$conversationId'
     | '/auth/login'
     | '/auth/signup'
     | '/journal/$category'
     | '/marketplace/$category'
     | '/orders/$orderId'
+    | '/salon/dashboard'
+    | '/salon/login'
+    | '/salon/profile'
+    | '/salon/signup'
     | '/salons/$slug'
     | '/journal'
     | '/marketplace'
@@ -286,12 +352,18 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/profile'
     | '/recommendations'
+    | '/admin/dashboard'
+    | '/admin/login'
     | '/ask-aura/$conversationId'
     | '/auth/login'
     | '/auth/signup'
     | '/journal/$category'
     | '/marketplace/$category'
     | '/orders/$orderId'
+    | '/salon/dashboard'
+    | '/salon/login'
+    | '/salon/profile'
+    | '/salon/signup'
     | '/salons/$slug'
     | '/journal/'
     | '/marketplace/'
@@ -312,11 +384,17 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ProfileRoute: typeof ProfileRoute
   RecommendationsRoute: typeof RecommendationsRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthSignupRoute: typeof AuthSignupRoute
   JournalCategoryRoute: typeof JournalCategoryRoute
   MarketplaceCategoryRoute: typeof MarketplaceCategoryRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
+  SalonDashboardRoute: typeof SalonDashboardRoute
+  SalonLoginRoute: typeof SalonLoginRoute
+  SalonProfileRoute: typeof SalonProfileRoute
+  SalonSignupRoute: typeof SalonSignupRoute
   SalonsSlugRoute: typeof SalonsSlugRoute
   JournalIndexRoute: typeof JournalIndexRoute
   MarketplaceIndexRoute: typeof MarketplaceIndexRoute
@@ -421,6 +499,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalonsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/salon/signup': {
+      id: '/salon/signup'
+      path: '/salon/signup'
+      fullPath: '/salon/signup'
+      preLoaderRoute: typeof SalonSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/salon/profile': {
+      id: '/salon/profile'
+      path: '/salon/profile'
+      fullPath: '/salon/profile'
+      preLoaderRoute: typeof SalonProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/salon/login': {
+      id: '/salon/login'
+      path: '/salon/login'
+      fullPath: '/salon/login'
+      preLoaderRoute: typeof SalonLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/salon/dashboard': {
+      id: '/salon/dashboard'
+      path: '/salon/dashboard'
+      fullPath: '/salon/dashboard'
+      preLoaderRoute: typeof SalonDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/$orderId': {
       id: '/orders/$orderId'
       path: '/orders/$orderId'
@@ -462,6 +568,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/ask-aura/$conversationId'
       preLoaderRoute: typeof AskAuraConversationIdRouteImport
       parentRoute: typeof AskAuraRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/salons/service/$service': {
       id: '/salons/service/$service'
@@ -514,11 +634,17 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ProfileRoute: ProfileRoute,
   RecommendationsRoute: RecommendationsRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminLoginRoute: AdminLoginRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthSignupRoute: AuthSignupRoute,
   JournalCategoryRoute: JournalCategoryRoute,
   MarketplaceCategoryRoute: MarketplaceCategoryRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
+  SalonDashboardRoute: SalonDashboardRoute,
+  SalonLoginRoute: SalonLoginRoute,
+  SalonProfileRoute: SalonProfileRoute,
+  SalonSignupRoute: SalonSignupRoute,
   SalonsSlugRoute: SalonsSlugRoute,
   JournalIndexRoute: JournalIndexRoute,
   MarketplaceIndexRoute: MarketplaceIndexRoute,

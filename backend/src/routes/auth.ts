@@ -66,6 +66,7 @@ router.post("/signup", async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        role: user.role,
         avatarUrl: user.profileImage,
       },
     });
@@ -110,6 +111,7 @@ router.post("/login", async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        role: user.role,
         avatarUrl: user.profileImage,
       },
     });
@@ -245,6 +247,7 @@ router.post(
         name: user.name,
         email: user.email,
         phone: user.phone,
+        role: user.role,
         avatarUrl: user.profileImage,
       });
     } catch (error) {

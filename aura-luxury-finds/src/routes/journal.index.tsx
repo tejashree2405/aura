@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/aura/PageShell";
 import { JournalCard } from "@/components/aura/JournalCard";
 import { JOURNAL } from "@/data/journal";
+import { api } from "@/lib/api-client";
+import type { JournalArticle } from "@/data/types";
 
 const CATS = [
   { slug: "bridal", label: "Bridal" },
@@ -9,6 +12,20 @@ const CATS = [
   { slug: "skincare", label: "Skincare" },
   { slug: "wellness", label: "Wellness" },
 ] as const;
+
+function dbToArticle(a: Record<string, unknown>): JournalArticle {
+  return {
+    slug: a.slug as string,
+    title: a.title as string,
+    excerpt: (a.excerpt as string) || "",
+    category: a.category as JournalArticle["category"],
+    cover: a.cover as string,
+    readingTime: (a.readingTime as string) || "5 min",
+    content: (a.content as string[]) || [],
+    author: (a.author as string) || "Aûra Editorial",
+    date: (a.date as string) || "",
+  };
+}
 
 export const Route = createFileRoute("/journal/")({
   head: () => ({
@@ -21,6 +38,17 @@ export const Route = createFileRoute("/journal/")({
 });
 
 function JournalIndex() {
+  const { data: dbArticles } = useQuery({
+    queryKey: ["public-journals"],
+    queryFn: () => api.listDbJournals().catch(() => []),
+    staleTime: 60_000,
+  });
+
+  const dbConverted = ((dbArticles as Record<string, unknown>[] | undefined) || []).map(dbToArticle);
+  const hardcodedSlugs = new Set(JOURNAL.map((a) => a.slug));
+  const uniqueDb = dbConverted.filter((a) => !hardcodedSlugs.has(a.slug));
+  const allArticles = [...JOURNAL, ...uniqueDb];
+
   return (
     <PageShell>
       <section className="px-6 md:px-16 pb-20">
@@ -44,7 +72,7 @@ function JournalIndex() {
           </div>
 
           <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {JOURNAL.map((p) => <JournalCard key={p.slug} p={p} />)}
+            {allArticles.map((p) => <JournalCard key={p.slug} p={p} />)}
           </div>
         </div>
       </section>

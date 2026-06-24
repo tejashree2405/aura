@@ -23,30 +23,36 @@ type SalonReviewsResponse = {
   count: number;
 };
 
+import type { Salon } from "@/data/types";
+
+function dbToSalon(s: Record<string, unknown>): Salon {
+  return {
+    slug: s.slug as string, name: s.name as string,
+    area: (s.city as string || "bangalore").toLowerCase().replace(/\s+/g, "-") as Salon["area"],
+    areaLabel: s.city as string || "Bangalore", rating: (s.rating as number) || 0,
+    startingPrice: (s.startingPrice as number) || 0, cover: (s.coverImage as string) || "",
+    gallery: (s.galleryImages as string[]) || [], specialty: ((s.services as string[]) || [])[0] || "",
+    about: (s.description as string) || "", specialties: (s.services as string[]) || [],
+    services: ((s.services as string[]) || []).map((svc) => svc.toLowerCase()) as Salon["services"],
+    contact: { phone: (s.phone as string) || "", email: (s.email as string) || "", website: (s.website as string) || "", address: (s.address as string) || "" },
+  };
+}
+
 export const Route = createFileRoute("/salons/$slug")({
   loader: ({ params }) => {
     const salon = getSalon(params.slug);
-    if (!salon) throw notFound();
-    return { salon };
+    return { salon: salon || null, slug: params.slug };
   },
   head: ({ loaderData }) =>
-    loaderData
-      ? {
-          meta: [
-            { title: `${loaderData.salon.name} — Aûra` },
-            { name: "description", content: loaderData.salon.about },
-            { property: "og:image", content: loaderData.salon.cover },
-          ],
-        }
-      : {},
+    loaderData?.salon
+      ? { meta: [{ title: `${loaderData.salon.name} — Aûra` }, { name: "description", content: loaderData.salon.about }, { property: "og:image", content: loaderData.salon.cover }] }
+      : { meta: [{ title: "Salon — Aûra" }] },
   component: SalonDetail,
   notFoundComponent: () => (
     <PageShell>
       <div className="px-6 md:px-16 py-20 max-w-[1280px] mx-auto">
         <h1 className="font-display text-3xl">Salon not found.</h1>
-        <Link to="/salons" className="mt-6 inline-block underline">
-          Back to salons
-        </Link>
+        <Link to="/salons" className="mt-6 inline-block underline">Back to salons</Link>
       </div>
     </PageShell>
   ),
@@ -57,9 +63,33 @@ function websiteHref(w: string) {
 }
 
 function SalonDetail() {
-  const { salon } = Route.useLoaderData();
+  const { salon: hardcoded, slug } = Route.useLoaderData();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const { data: dbRaw, isLoading: dbLoading } = useQuery({
+    queryKey: ["salon-detail", slug],
+    queryFn: () => api.getDbSalon(slug).catch(() => null),
+    enabled: !hardcoded,
+    staleTime: 60_000,
+  });
+
+  const salon = hardcoded || (dbRaw ? dbToSalon(dbRaw as Record<string, unknown>) : null);
+
+  if (!hardcoded && dbLoading) {
+    return <PageShell><div className="px-6 md:px-16 py-20 max-w-[1280px] mx-auto"><p className="text-foreground/50">Loading...</p></div></PageShell>;
+  }
+  if (!salon) {
+    return (
+      <PageShell>
+        <div className="px-6 md:px-16 py-20 max-w-[1280px] mx-auto">
+          <h1 className="font-display text-3xl">Salon not found.</h1>
+          <Link to="/salons" className="mt-6 inline-block underline">Back to salons</Link>
+        </div>
+      </PageShell>
+    );
+  }
+
   const related = SALONS.filter((s) => s.slug !== salon.slug).slice(0, 3);
   const [open, setOpen] = useState(false);
   const reviewsQ = useQuery({
@@ -270,13 +300,28 @@ function BookingModal({
   const [err, setErr] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
 
+  const { data: slotsData } = useQuery({
+    queryKey: ["slots", s.slug, date],
+    queryFn: () => api.getAvailableSlots(s.slug, date),
+    enabled: !!date,
+    staleTime: 30_000,
+  });
+  const availableSlots = (slotsData as { available?: string[] })?.available ?? [];
+  const now = new Date();
+  const isToday = date === today;
+  const filteredSlots = availableSlots.filter((slot) => {
+    if (!isToday) return true;
+    const [h, m] = slot.split(":").map(Number);
+    return h > now.getHours() || (h === now.getHours() && m > now.getMinutes());
+  });
+
   return (
     <div
-      className="fixed inset-0 z-[100] grid place-items-center bg-foreground/30 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/30 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[520px] rounded-3xl bg-background p-8 shadow-[var(--shadow-soft)] relative"
+        className="w-full max-w-[520px] max-h-[90vh] overflow-y-auto rounded-3xl bg-background p-8 shadow-[var(--shadow-soft)] relative my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -301,33 +346,45 @@ function BookingModal({
               className="mt-2 w-full rounded-xl border border-foreground/15 bg-background px-4 py-3 text-sm capitalize"
             >
               {s.services.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
+                <option key={v} value={v}>{v}</option>
               ))}
             </select>
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="eyebrow text-xs">Date</span>
-              <input
-                type="date"
-                min={today}
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-foreground/15 bg-background px-4 py-3 text-sm"
-              />
-            </label>
-            <label className="block">
-              <span className="eyebrow text-xs">Time</span>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-foreground/15 bg-background px-4 py-3 text-sm"
-              />
-            </label>
-          </div>
+          <label className="block">
+            <span className="eyebrow text-xs">Date</span>
+            <input
+              type="date"
+              min={today}
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setTime(""); }}
+              className="mt-2 w-full rounded-xl border border-foreground/15 bg-background px-4 py-3 text-sm"
+            />
+          </label>
+          {date && (
+            <div>
+              <span className="eyebrow text-xs">Available Time Slots</span>
+              {filteredSlots.length === 0 ? (
+                <p className="mt-2 text-sm text-foreground/50">No available slots for this date.</p>
+              ) : (
+                <div className="mt-2 grid grid-cols-4 gap-2">
+                  {filteredSlots.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => setTime(slot)}
+                      className={`rounded-xl border px-3 py-2.5 text-sm transition-colors ${
+                        time === slot
+                          ? "bg-foreground text-background border-foreground"
+                          : "border-foreground/15 hover:border-foreground/30"
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <label className="block">
             <span className="eyebrow text-xs">Notes (optional)</span>
             <textarea

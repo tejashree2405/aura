@@ -1,13 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Reveal } from "./Reveal";
 import { SALONS } from "@/data/salons";
 import { SalonCard } from "./SalonCard";
 import { Link } from "@tanstack/react-router";
+import { api } from "@/lib/api-client";
+import type { Salon } from "@/data/types";
+
+function dbToSalon(s: Record<string, unknown>): Salon {
+  return {
+    slug: s.slug as string, name: s.name as string,
+    area: (s.city as string || "bangalore").toLowerCase().replace(/\s+/g, "-") as Salon["area"],
+    areaLabel: s.city as string || "Bangalore", rating: (s.rating as number) || 0,
+    startingPrice: (s.startingPrice as number) || 0, cover: (s.coverImage as string) || "",
+    gallery: (s.galleryImages as string[]) || [], specialty: ((s.services as string[]) || [])[0] || "",
+    about: (s.description as string) || "", specialties: (s.services as string[]) || [],
+    services: (s.services as string[])?.map((svc) => svc.toLowerCase()) as Salon["services"] || [],
+    contact: { phone: (s.phone as string) || "", email: (s.email as string) || "", website: (s.website as string) || "", address: (s.address as string) || "" },
+  };
+}
 
 export function FeaturedSalons() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
+  const { data: dbSalons } = useQuery({ queryKey: ["public-salons"], queryFn: () => api.listDbSalons().catch(() => []), staleTime: 60_000 });
+  const dbConverted = ((dbSalons as Record<string, unknown>[] | undefined) || []).map(dbToSalon);
+  const hardcodedSlugs = new Set(SALONS.map((s) => s.slug));
+  const allSalons = [...SALONS, ...dbConverted.filter((s) => !hardcodedSlugs.has(s.slug))];
 
   useEffect(() => {
     const el = trackRef.current;
@@ -33,7 +53,7 @@ export function FeaturedSalons() {
     trackRef.current?.scrollBy({ left: dir * 320, behavior: "smooth" });
   };
 
-  const loop = [...SALONS, ...SALONS];
+  const loop = [...allSalons, ...allSalons];
 
   return (
     <section className="py-24 md:py-32 overflow-hidden">

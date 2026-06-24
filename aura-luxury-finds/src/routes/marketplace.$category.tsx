@@ -1,7 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/aura/PageShell";
 import { ProductCard } from "@/components/aura/ProductCard";
 import { productsByCategory } from "@/data/products";
+import { api } from "@/lib/api-client";
+import type { Product } from "@/data/types";
 
 const VALID = ["skincare", "haircare", "makeup", "wellness"] as const;
 const LABELS: Record<string, string> = {
@@ -26,7 +29,24 @@ export const Route = createFileRoute("/marketplace/$category")({
 
 function CategoryPage() {
   const { category, label } = Route.useLoaderData();
-  const products = productsByCategory(category);
+  const hardcoded = productsByCategory(category);
+  const { data: dbAll } = useQuery({
+    queryKey: ["public-products"],
+    queryFn: () => api.listDbProducts().catch(() => []),
+    staleTime: 60_000,
+  });
+  const hardcodedSlugs = new Set(hardcoded.map((p) => p.slug));
+  const dbFiltered = ((dbAll as Record<string, unknown>[] | undefined) || [])
+    .filter((p) => (p.category as string) === category && !hardcodedSlugs.has(p.slug as string))
+    .map((p): Product => ({
+      slug: p.slug as string, name: p.name as string, brand: p.brand as string,
+      category: p.category as Product["category"], price: p.price as number,
+      rating: (p.rating as number) || 4.8, image: p.image as string,
+      gallery: (p.gallery as string[]) || [p.image as string],
+      description: (p.description as string) || "", ingredients: (p.ingredients as string[]) || [], reviews: [],
+    }));
+  const products = [...hardcoded, ...dbFiltered];
+
   return (
     <PageShell>
       <section className="px-6 md:px-16 pb-20">

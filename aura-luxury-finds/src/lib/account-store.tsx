@@ -1,15 +1,13 @@
 /**
- * Per-user persisted stores (bag, addresses, orders, appointments).
- * All keyed by user.id so signing out / switching accounts isolates data.
- * Future Prisma swap: replace these contexts with server-function-backed hooks.
+ * Per-user persisted stores (bag, addresses).
+ * Bag uses localStorage keyed by user.id.
+ * Addresses use backend API for persistence.
  */
-import { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, useCallback, type ReactNode } from "react";
 import { useAuth } from "./auth-context";
-import type {
-  Address, BagItem, Order, OrderItem, Appointment,
-  PaymentMethod, OrderStatus,
-} from "@/data/types";
+import type { Address, BagItem } from "@/data/types";
 import { getProduct } from "@/data/products";
+import { api } from "./api-client";
 
 function key(userId: string | undefined, name: string) {
   return `aura.${userId ?? "guest"}.${name}`;
@@ -28,9 +26,30 @@ function save<T>(k: string, value: T) {
   try { localStorage.setItem(k, JSON.stringify(value)); } catch { /* ignore */ }
 }
 
-// =========================================================================
+const dbProductCache = new Map<string, { price: number; name: string; brand: string; image: string; category: string }>();
+
+async function ensureDbProductCache() {
+  if (dbProductCache.size > 0) return;
+  try {
+    const products = await api.listDbProducts() as Array<Record<string, unknown>>;
+    for (const p of products) {
+      dbProductCache.set(p.slug as string, {
+        price: p.price as number, name: p.name as string, brand: p.brand as string,
+        image: p.image as string, category: p.category as string,
+      });
+    }
+  } catch { /* offline */ }
+}
+
+export function resolveProduct(slug: string) {
+  const hardcoded = getProduct(slug);
+  if (hardcoded) return hardcoded;
+  const cached = dbProductCache.get(slug);
+  if (cached) return { slug, ...cached, rating: 4.8, gallery: [cached.image], description: "", ingredients: [] as string[], reviews: [] as { author: string; rating: number; text: string }[] };
+  return null;
+}
+
 interface AccountValue {
-  // Bag
   bag: BagItem[];
   bagCount: number;
   bagSubtotal: number;
@@ -38,32 +57,29 @@ interface AccountValue {
   removeFromBag: (slug: string) => void;
   updateBagQty: (slug: string, qty: number) => void;
   clearBag: () => void;
-  // Addresses
   addresses: Address[];
-  addAddress: (a: Omit<Address, "id">) => Address;
-  updateAddress: (id: string, patch: Partial<Address>) => void;
-  removeAddress: (id: string) => void;
-  // Orders
-  orders: Order[];
-  placeOrder: (input: {
-    items: OrderItem[];
-    address: Address;
-    paymentMethod: PaymentMethod;
-    subtotal: number;
-    tax: number;
-    delivery: number;
-    total: number;
-  }) => Order;
-  updateOrderStatus: (id: string, status: OrderStatus) => void;
-  getOrder: (id: string) => Order | undefined;
-  // Appointments
-  appointments: Appointment[];
-  bookAppointment: (a: Omit<Appointment, "id" | "status" | "createdAt">) => Appointment;
-  cancelAppointment: (id: string) => void;
-  rescheduleAppointment: (id: string, date: string, time: string) => void;
+  addressesLoading: boolean;
+  addAddress: (a: Omit<Address, "id">) => Promise<Address>;
+  updateAddress: (id: string, patch: Partial<Address>) => Promise<void>;
+  removeAddress: (id: string) => Promise<void>;
+  refreshAddresses: () => void;
 }
 
 const AccountCtx = createContext<AccountValue | null>(null);
+
+function dbToAddress(a: Record<string, unknown>): Address {
+  return {
+    id: a.id as string,
+    fullName: (a.fullName as string) || "",
+    phone: (a.phone as string) || "",
+    line1: a.line1 as string,
+    line2: a.line2 as string | undefined,
+    landmark: a.landmark as string | undefined,
+    city: a.city as string,
+    state: a.state as string,
+    pincode: a.pincode as string,
+  };
+}
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -71,31 +87,70 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const [bag, setBag] = useState<BagItem[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [cacheReady, setCacheReady] = useState(false);
 
-  // Hydrate when user changes
   useEffect(() => {
     setBag(load<BagItem[]>(key(uid, "bag"), []));
-    setAddresses(load<Address[]>(key(uid, "addresses"), []));
-    setOrders(load<Order[]>(key(uid, "orders"), []));
-    setAppointments(load<Appointment[]>(key(uid, "appointments"), []));
+    ensureDbProductCache().then(() => setCacheReady(true));
   }, [uid]);
 
-  // Persist on change
+  const refreshAddresses = useCallback(async () => {
+    if (!uid) { setAddresses([]); return; }
+    setAddressesLoading(true);
+    try {
+      const raw = await api.listAddresses() as Array<Record<string, unknown>>;
+      setAddresses(raw.map(dbToAddress));
+    } catch {
+      setAddresses(load<Address[]>(key(uid, "addresses"), []));
+    } finally {
+      setAddressesLoading(false);
+    }
+  }, [uid]);
+
+  useEffect(() => { refreshAddresses(); }, [refreshAddresses]);
   useEffect(() => { save(key(uid, "bag"), bag); }, [uid, bag]);
-  useEffect(() => { save(key(uid, "addresses"), addresses); }, [uid, addresses]);
-  useEffect(() => { save(key(uid, "orders"), orders); }, [uid, orders]);
-  useEffect(() => { save(key(uid, "appointments"), appointments); }, [uid, appointments]);
 
   const bagCount = useMemo(() => bag.reduce((s, i) => s + i.qty, 0), [bag]);
-  const bagSubtotal = useMemo(
-    () => bag.reduce((s, i) => {
-      const p = getProduct(i.productSlug);
+  const bagSubtotal = useMemo(() => {
+    if (!cacheReady) return 0;
+    return bag.reduce((s, i) => {
+      const p = resolveProduct(i.productSlug);
       return s + (p ? p.price * i.qty : 0);
-    }, 0),
-    [bag],
-  );
+    }, 0);
+  }, [bag, cacheReady]);
+
+  const addAddress = useCallback(async (a: Omit<Address, "id">): Promise<Address> => {
+    try {
+      const created = await api.createAddress(a as Record<string, unknown>) as Record<string, unknown>;
+      const addr = dbToAddress(created);
+      setAddresses((prev) => [addr, ...prev]);
+      return addr;
+    } catch {
+      const local: Address = { ...a, id: crypto.randomUUID() };
+      setAddresses((prev) => [local, ...prev]);
+      save(key(uid, "addresses"), [local, ...addresses]);
+      return local;
+    }
+  }, [uid, addresses]);
+
+  const updateAddress = useCallback(async (id: string, patch: Partial<Address>) => {
+    try {
+      await api.updateAddress(id, patch as Record<string, unknown>);
+      setAddresses((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a));
+    } catch {
+      setAddresses((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a));
+    }
+  }, []);
+
+  const removeAddress = useCallback(async (id: string) => {
+    try {
+      await api.deleteAddress(id);
+      setAddresses((prev) => prev.filter((a) => a.id !== id));
+    } catch {
+      setAddresses((prev) => prev.filter((a) => a.id !== id));
+    }
+  }, []);
 
   const value: AccountValue = {
     bag, bagCount, bagSubtotal,
@@ -113,46 +168,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       ? prev.filter((b) => b.productSlug !== slug)
       : prev.map((b) => b.productSlug === slug ? { ...b, qty } : b)),
     clearBag: () => setBag([]),
-
-    addresses,
-    addAddress: (a) => {
-      const created: Address = { ...a, id: crypto.randomUUID() };
-      setAddresses((prev) => [...prev, created]);
-      return created;
-    },
-    updateAddress: (id, patch) => setAddresses((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a)),
-    removeAddress: (id) => setAddresses((prev) => prev.filter((a) => a.id !== id)),
-
-    orders,
-    placeOrder: (input) => {
-      const seq = 1024 + orders.length;
-      const order: Order = {
-        id: `AURA${seq}`,
-        createdAt: new Date().toISOString(),
-        status: "Confirmed",
-        ...input,
-      };
-      setOrders((prev) => [order, ...prev]);
-      return order;
-    },
-    updateOrderStatus: (id, status) => setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status } : o)),
-    getOrder: (id) => orders.find((o) => o.id === id),
-
-    appointments,
-    bookAppointment: (a) => {
-      const created: Appointment = {
-        ...a,
-        id: crypto.randomUUID(),
-        status: "Upcoming",
-        createdAt: new Date().toISOString(),
-      };
-      setAppointments((prev) => [created, ...prev]);
-      return created;
-    },
-    cancelAppointment: (id) => setAppointments((prev) =>
-      prev.map((a) => a.id === id ? { ...a, status: "Cancelled" } : a)),
-    rescheduleAppointment: (id, date, time) => setAppointments((prev) =>
-      prev.map((a) => a.id === id ? { ...a, date, time, status: "Upcoming" } : a)),
+    addresses, addressesLoading, addAddress, updateAddress, removeAddress, refreshAddresses,
   };
 
   return <AccountCtx.Provider value={value}>{children}</AccountCtx.Provider>;

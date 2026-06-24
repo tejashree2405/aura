@@ -5,8 +5,8 @@ import { z } from "zod";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { PageShell } from "@/components/aura/PageShell";
 import { RequireAuth } from "@/components/aura/RequireAuth";
-import { useAccount } from "@/lib/account-store";
-import { getProduct } from "@/data/products";
+import { useAccount, resolveProduct } from "@/lib/account-store";
+import { api } from "@/lib/api-client";
 import type { Address, OrderItem, PaymentMethod } from "@/data/types";
 
 const searchSchema = z.object({
@@ -25,17 +25,17 @@ const DELIVERY = (sub: number) => (sub > 2500 ? 0 : 99);
 function CheckoutPage() {
   const { slug } = Route.useSearch();
   const navigate = useNavigate();
-  const { bag, addresses, addAddress, updateAddress, removeAddress, placeOrder, clearBag } = useAccount();
+  const { bag, addresses, addAddress, updateAddress, removeAddress, clearBag } = useAccount();
 
   const items: OrderItem[] = useMemo(() => {
     if (slug) {
-      const p = getProduct(slug);
+      const p = resolveProduct(slug);
       if (!p) return [];
       return [{ productSlug: p.slug, name: p.name, brand: p.brand, image: p.image, qty: 1, price: p.price }];
     }
     return bag
       .map((b) => {
-        const p = getProduct(b.productSlug);
+        const p = resolveProduct(b.productSlug);
         return p ? { productSlug: p.slug, name: p.name, brand: p.brand, image: p.image, qty: b.qty, price: p.price } : null;
       })
       .filter((x): x is OrderItem => !!x);
@@ -76,12 +76,20 @@ function CheckoutPage() {
     const address = addresses.find((a) => a.id === selectedAddrId);
     if (!address) { setErr("Select or add a delivery address."); return; }
     setProcessing(true);
-    await new Promise((r) => setTimeout(r, 1600));
-    const order = placeOrder({ items, address, paymentMethod: method, subtotal, tax, delivery, total });
-    if (!slug) clearBag();
-    setProcessing(false);
-    setSuccess(order.id);
-    setTimeout(() => navigate({ to: "/orders/$orderId", params: { orderId: order.id } }), 1400);
+    try {
+      const order = await api.createOrder({
+        items: items.map((i) => ({ productId: i.productSlug, quantity: i.qty, price: i.price })),
+        total,
+        paymentMethod: method,
+      });
+      if (!slug) clearBag();
+      setProcessing(false);
+      setSuccess(order.id);
+      setTimeout(() => navigate({ to: "/orders" }), 1400);
+    } catch (e) {
+      setProcessing(false);
+      setErr(e instanceof Error ? e.message : "Order failed");
+    }
   };
 
   if (processing || success) {
@@ -139,7 +147,7 @@ function CheckoutPage() {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <button onClick={(e) => { e.stopPropagation(); setEditing(a); setShowForm(true); }} className="h-8 w-8 grid place-items-center rounded-full hover:bg-foreground/5"><Pencil size={12} /></button>
-                            <button onClick={(e) => { e.stopPropagation(); removeAddress(a.id); }} className="h-8 w-8 grid place-items-center rounded-full hover:bg-foreground/5 text-[var(--earth)]"><Trash2 size={12} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); void removeAddress(a.id); }} className="h-8 w-8 grid place-items-center rounded-full hover:bg-foreground/5 text-[var(--earth)]"><Trash2 size={12} /></button>
                           </div>
                         </div>
                       </li>
@@ -158,12 +166,12 @@ function CheckoutPage() {
                   <AddressForm
                     initial={editing}
                     onCancel={() => { setShowForm(false); setEditing(null); }}
-                    onSubmit={(a) => {
+                    onSubmit={async (a) => {
                       if (editing) {
-                        updateAddress(editing.id, a);
+                        await updateAddress(editing.id, a);
                         setSelectedAddrId(editing.id);
                       } else {
-                        const created = addAddress(a);
+                        const created = await addAddress(a);
                         setSelectedAddrId(created.id);
                       }
                       setShowForm(false);
@@ -294,6 +302,10 @@ function AddressForm({
           onClick={() => {
             if (!f.fullName || !f.phone || !f.line1 || !f.city || !f.state || !f.pincode) {
               setErr("Please complete required fields.");
+              return;
+            }
+            if (!/^\d{6}$/.test(f.pincode)) {
+              setErr("Pincode must be exactly 6 digits.");
               return;
             }
             onSubmit(f);

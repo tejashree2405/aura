@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { PageShell } from "@/components/aura/PageShell";
 import { ProductCard } from "@/components/aura/ProductCard";
 import { PRODUCTS } from "@/data/products";
+import { api } from "@/lib/api-client";
+import type { Product } from "@/data/types";
 
 const CATEGORIES = [
   { slug: "skincare", label: "Skincare" },
@@ -9,6 +12,22 @@ const CATEGORIES = [
   { slug: "makeup", label: "Makeup" },
   { slug: "wellness", label: "Wellness" },
 ] as const;
+
+function dbToProduct(p: Record<string, unknown>): Product {
+  return {
+    slug: p.slug as string,
+    name: p.name as string,
+    brand: p.brand as string,
+    category: p.category as Product["category"],
+    price: p.price as number,
+    rating: (p.rating as number) || 4.8,
+    image: p.image as string,
+    gallery: (p.gallery as string[]) || [p.image as string],
+    description: (p.description as string) || "",
+    ingredients: (p.ingredients as string[]) || [],
+    reviews: [],
+  };
+}
 
 export const Route = createFileRoute("/marketplace/")({
   head: () => ({
@@ -21,6 +40,17 @@ export const Route = createFileRoute("/marketplace/")({
 });
 
 function MarketplacePage() {
+  const { data: dbProducts } = useQuery({
+    queryKey: ["public-products"],
+    queryFn: () => api.listDbProducts().catch(() => []),
+    staleTime: 60_000,
+  });
+
+  const dbConverted = ((dbProducts as Record<string, unknown>[] | undefined) || []).map(dbToProduct);
+  const hardcodedSlugs = new Set(PRODUCTS.map((p) => p.slug));
+  const uniqueDb = dbConverted.filter((p) => !hardcodedSlugs.has(p.slug));
+  const allProducts = [...PRODUCTS, ...uniqueDb];
+
   return (
     <PageShell>
       <section className="px-6 md:px-16 pb-20">
@@ -44,7 +74,7 @@ function MarketplacePage() {
           </div>
 
           <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-            {PRODUCTS.map((p) => <ProductCard key={p.slug} p={p} />)}
+            {allProducts.map((p) => <ProductCard key={p.slug} p={p} />)}
           </div>
         </div>
       </section>

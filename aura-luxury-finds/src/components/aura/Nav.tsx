@@ -1,17 +1,51 @@
-import { Sparkles, User, ShoppingBag, Calendar, Package, Heart, LogOut, ChevronDown } from "lucide-react";
+import { Sparkles, User, ShoppingBag, Calendar, Package, LogOut, ChevronDown, Store, Shield } from "lucide-react";
 import { motion } from "motion/react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, type UserRole } from "@/lib/auth-context";
 import { useAccount } from "@/lib/account-store";
 
-const links = [
+const baseLinks = [
   { to: "/", label: "Home" },
   { to: "/salons", label: "Salons" },
   { to: "/marketplace", label: "Marketplace" },
   { to: "/journal", label: "Journal" },
   { to: "/about", label: "About" },
 ] as const;
+
+const roleLinks: Record<UserRole, readonly { to: string; label: string }[]> = {
+  USER: baseLinks,
+  SALON: [
+    { to: "/marketplace", label: "Marketplace" },
+    { to: "/journal", label: "Journal" },
+    { to: "/about", label: "About" },
+    { to: "/salon/dashboard", label: "Appointments" },
+  ],
+  ADMIN: [
+    { to: "/admin/dashboard", label: "Dashboard" },
+  ],
+};
+
+type MenuItem = { to: string; icon: React.ReactNode; label: string; badge?: number };
+
+function getUserMenuItems(role: UserRole, bagCount: number): MenuItem[] {
+  if (role === "ADMIN") {
+    return [
+      { to: "/admin/dashboard", icon: <Shield size={14} />, label: "Dashboard" },
+    ];
+  }
+  if (role === "SALON") {
+    return [
+      { to: "/salon/profile", icon: <Store size={14} />, label: "Salon Profile" },
+    ];
+  }
+  return [
+    { to: "/profile", icon: <User size={14} />, label: "Profile" },
+    { to: "/bag", icon: <ShoppingBag size={14} />, label: "My Bag", badge: bagCount },
+    { to: "/appointments", icon: <Calendar size={14} />, label: "Appointments" },
+    { to: "/orders", icon: <Package size={14} />, label: "Orders" },
+  ];
+}
 
 export function Nav() {
   const { user, signOut } = useAuth();
@@ -41,6 +75,9 @@ export function Nav() {
   const initials = (user?.name ?? "?")
     .split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 
+  const navLinks = user ? roleLinks[user.role] : baseLinks;
+  const menuItems = user ? getUserMenuItems(user.role, bagCount) : [];
+
   return (
     <motion.header
       initial={{ y: -24, opacity: 0 }}
@@ -53,7 +90,7 @@ export function Nav() {
           A<span className="italic">û</span>ra<span className="text-[var(--gold)]">.</span>
         </Link>
         <ul className="hidden md:flex items-center gap-8 text-sm text-foreground/80">
-          {links.map((l) => (
+          {navLinks.map((l) => (
             <li key={l.to}>
               <Link
                 to={l.to}
@@ -88,7 +125,12 @@ export function Nav() {
                   </span>
                 )}
                 <span className="truncate max-w-[90px]">{user.name}</span>
-                {bagCount > 0 && (
+                {user.role !== "USER" && (
+                  <span className="rounded-full bg-foreground/10 text-[9px] px-1.5 py-0.5 uppercase tracking-wider">
+                    {user.role === "SALON" ? "Salon" : "Admin"}
+                  </span>
+                )}
+                {bagCount > 0 && user.role === "USER" && (
                   <span className="rounded-full bg-[var(--gold)] text-foreground text-[10px] px-1.5 py-0.5 leading-none">
                     {bagCount}
                   </span>
@@ -97,11 +139,9 @@ export function Nav() {
               </button>
               {open && (
                 <div className="absolute right-0 top-[calc(100%+8px)] w-60 rounded-2xl border border-foreground/10 bg-background shadow-[var(--shadow-soft)] p-2 text-sm">
-                  <MenuLink to="/profile" icon={<User size={14} />} label="Profile" onClick={() => setOpen(false)} />
-                  <MenuLink to="/bag" icon={<ShoppingBag size={14} />} label="My Bag" badge={bagCount} onClick={() => setOpen(false)} />
-                  <MenuLink to="/recommendations" icon={<Heart size={14} />} label="Recommendations" onClick={() => setOpen(false)} />
-                  <MenuLink to="/appointments" icon={<Calendar size={14} />} label="Appointments" onClick={() => setOpen(false)} />
-                  <MenuLink to="/orders" icon={<Package size={14} />} label="Orders" onClick={() => setOpen(false)} />
+                  {menuItems.map((item) => (
+                    <MenuLink key={item.to} to={item.to} icon={item.icon} label={item.label} badge={item.badge} onClick={() => setOpen(false)} />
+                  ))}
                   <div className="my-2 h-px bg-foreground/10" />
                   <button
                     onClick={() => { setOpen(false); signOut(); navigate({ to: "/" }); }}
@@ -121,13 +161,15 @@ export function Nav() {
               Sign In
             </Link>
           )}
-          <Link
-            to="/ask-aura"
-            className="group inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm hover:bg-[var(--earth)] transition-colors"
-          >
-            <Sparkles size={14} className="text-[var(--gold)]" />
-            <span>Ask Aura AI</span>
-          </Link>
+          {(!user || user.role !== "ADMIN") && (
+            <Link
+              to="/ask-aura"
+              className="group inline-flex items-center gap-2 rounded-full bg-foreground text-background px-5 py-2.5 text-sm hover:bg-[var(--earth)] transition-colors"
+            >
+              <Sparkles size={14} className="text-[var(--gold)]" />
+              <span>Ask Aura AI</span>
+            </Link>
+          )}
         </div>
       </nav>
     </motion.header>

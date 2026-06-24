@@ -222,16 +222,17 @@ router.post("/chat", authenticate, async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // 4. Fetch the member's beauty profile
+    // 4. Fetch the member's beauty profile and role
     let beautyProfile = await prisma.beautyProfile.findUnique({
       where: { userId }
     });
+    const currentUser = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
 
     // 5. Generate AI response
     let assistantText = "";
     try {
       const history = existingMessages.map(m => ({ role: m.role, content: m.content }));
-      assistantText = await generateAIResponse(history, content.trim(), beautyProfile);
+      assistantText = await generateAIResponse(history, content.trim(), beautyProfile, currentUser?.role);
     } catch (e: any) {
       console.error("LangChain generation failed:", e);
       assistantText = `I'm momentarily offline. Please check that GROQ_API_KEY is configured. Error: ${e.message}`;
