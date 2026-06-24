@@ -15,10 +15,16 @@ import uploadRoutes from "./routes/upload";
 const app = express();
 const PORT = process.env.PORT || 3004;
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : []),
+    ],
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
